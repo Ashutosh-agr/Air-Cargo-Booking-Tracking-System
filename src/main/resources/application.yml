@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://<NEON_HOST>:<NEON_PORT>/<NEON_DB>?options=-c%20TimeZone=UTC
-    username: <NEON_USER>
-    password: <NEON_PASSWORD>
+    url: jdbc:postgresql://${NEON_HOST}:${NEON_PORT}/${NEON_DB}?options=-c%20TimeZone=UTC
+    username: ${NEON_USER}
+    password: ${NEON_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 30
@@ -26,16 +26,16 @@ spring:
 
   redis:
     redisson:
-      enabled: false  # <-- just points to the file
+      enabled: false  # we are configuring Redisson manually via @Configuration
 
   cache:
     type: redis
 
   flyway:
     enabled: true
-    url: jdbc:postgresql://<NEON_HOST>:<NEON_PORT>/<NEON_DB>?options=-c%20TimeZone=UTC
-    user: <NEON_USER>
-    password: <NEON_PASSWORD>
+    url: jdbc:postgresql://${NEON_HOST}:${NEON_PORT}/${NEON_DB}?options=-c%20TimeZone=UTC
+    user: ${NEON_USER}
+    password: ${NEON_PASSWORD}
     locations: classpath:db/migration
     baseline-on-migrate: true
     validate-on-migrate: true

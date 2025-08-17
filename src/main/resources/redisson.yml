@@ -1,10 +1,11 @@
 singleServerConfig:
-  address: "${REDIS_URL}"
+  address: "REDIS_URL="rediss://default:${REDIS_PASSWORD}@content-shepherd-7132.upstash.io:6379""
   sslEnableEndpointIdentification: true
   connectionMinimumIdleSize: 5
   connectionPoolSize: 20
   idleConnectionTimeout: 10000
   connectTimeout: 10000
   timeout: 3000
+
 threads: 8
 nettyThreads: 16

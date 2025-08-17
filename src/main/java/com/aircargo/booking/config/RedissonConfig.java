@@ -18,7 +18,7 @@ public class RedissonConfig {
         Config config = new Config();
         config.useSingleServer()
               .setAddress("rediss://content-shepherd-7132.upstash.io:6379")
-              .setPassword("default:" + redisPassword) // Upstash expects "default:<password>"
+              .setPassword(redisPassword) 
               .setSslEnableEndpointIdentification(true)
               .setConnectionMinimumIdleSize(5)
               .setConnectionPoolSize(20)

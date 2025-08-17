@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/aircargo?options=-c%20TimeZone=UTC
-    username: postgres
-    password: Ashutosh1503k
+    url: jdbc:postgresql://<NEON_HOST>:<NEON_PORT>/<NEON_DB>?options=-c%20TimeZone=UTC
+    username: <NEON_USER>
+    password: <NEON_PASSWORD>
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 30
@@ -22,22 +22,24 @@ spring:
         jdbc.batch_size: 50
         order_inserts: true
         order_updates: true
-        jdbc.time_zone: UTC   # ensure ORM uses UTC
+        jdbc.time_zone: UTC
 
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: <UPSTASH_REDIS_HOST>
+      port: <UPSTASH_REDIS_PORT>
+      password: <UPSTASH_REDIS_PASSWORD>
       timeout: 3000
+      ssl: true
 
   cache:
     type: redis
 
   flyway:
     enabled: true
-    url: jdbc:postgresql://localhost:5432/aircargo?options=-c%20TimeZone=UTC
-    user: postgres
-    password: Ashutosh1503k
+    url: jdbc:postgresql://<NEON_HOST>:<NEON_PORT>/<NEON_DB>?options=-c%20TimeZone=UTC
+    user: <NEON_USER>
+    password: <NEON_PASSWORD>
     locations: classpath:db/migration
     baseline-on-migrate: true
     validate-on-migrate: true

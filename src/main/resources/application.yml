@@ -26,7 +26,7 @@ spring:
 
   redis:
     redisson:
-      config: classpath:redisson.yml   # <-- just points to the file
+      enabled: false  # <-- just points to the file
 
   cache:
     type: redis

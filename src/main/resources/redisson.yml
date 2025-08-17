@@ -1,5 +1,5 @@
 singleServerConfig:
-  address: "REDIS_URL="rediss://default:${REDIS_PASSWORD}@content-shepherd-7132.upstash.io:6379""
+  address: "rediss://default:${REDIS_PASSWORD}@content-shepherd-7132.upstash.io:6379"
   sslEnableEndpointIdentification: true
   connectionMinimumIdleSize: 5
   connectionPoolSize: 20

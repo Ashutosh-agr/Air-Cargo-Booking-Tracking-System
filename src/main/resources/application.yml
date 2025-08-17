@@ -24,10 +24,9 @@ spring:
         order_updates: true
         jdbc.time_zone: UTC
 
-  data:
-    redis:
-      url: ${REDIS_URL}
-      timeout: 3000
+  redis:
+    redisson:
+      config: classpath:redisson.yml
 
   cache:
     type: redis

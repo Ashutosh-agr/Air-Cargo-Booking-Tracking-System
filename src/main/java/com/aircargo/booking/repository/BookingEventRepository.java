@@ -14,4 +14,7 @@ public interface BookingEventRepository extends JpaRepository<BookingEvents, UUI
 
     @Query("Select be from BookingEvents as be where be.booking.id = :bookingId order by be.timestamp")
     List<BookingEvents> findByBookingIdOrderByTime(@Param("bookingId") UUID bookingId);
+
+    @Query("Select be from BookingEvents as be where be.booking.id = :bookingId order by be.timestamp desc limit 1")
+    List<BookingEvents> findByBookingIdOrderByTimeDesc(@Param("bookingId") UUID bookingId);
 }

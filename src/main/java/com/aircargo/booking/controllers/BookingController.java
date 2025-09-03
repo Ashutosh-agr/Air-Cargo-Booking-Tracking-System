@@ -7,8 +7,6 @@ import com.aircargo.booking.service.BookingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.UUID;
-
 @RestController
 @RequestMapping("/bookings")
 @RequiredArgsConstructor
@@ -27,8 +25,8 @@ public class BookingController {
     }
 
     @PatchMapping("/{refId}/arrive")
-    public void arriveBooming(@PathVariable String refId,@RequestParam String flightNumber){
-        bookingService.arriveBooking(refId,flightNumber);
+    public void arriveBooming(@PathVariable String refId){
+        bookingService.arriveBooking(refId);
     }
 
     @PatchMapping("/{refId}/cancel")

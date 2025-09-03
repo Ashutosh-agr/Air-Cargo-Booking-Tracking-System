@@ -17,7 +17,9 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,6 +31,12 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final BookingEventRepository bookingEventRepository;
     private final FlightRepository flightRepository;
+    private final FlightService flightService;
+
+    private boolean direct,oneStop;
+    private int depart = 0;
+    private HashSet<String> possibleFlights = new HashSet<>();
+    private String curFlight = "";
 
     @Transactional
     public Booking createBooking(BookingRequest bookingRequest){
@@ -43,8 +51,8 @@ public class BookingService {
                 .weightKg(bookingRequest.getWeightKg())
                 .destination(bookingRequest.getDestination())
                 .status(BookingStatus.BOOKED)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
+                .createdAt(Instant.now())
+                .updatedAt(Instant.now())
                 .build();
 
         bookingRepository.save(booking);
@@ -65,24 +73,49 @@ public class BookingService {
                 .orElseThrow(() -> new RuntimeException("Booking not Found"));
 
         if(booking.getStatus() == BookingStatus.CANCELLED){
-            throw new RuntimeException("Cannot depart a cancel booking after arrival");
+            throw new RuntimeException("Cannot depart a booking that is already canceled.");
         }
 
-        booking.setStatus(BookingStatus.DEPARTED);
-        booking.setUpdatedAt(LocalDateTime.now());
+        if(booking.getStatus() == BookingStatus.DEPARTED){
+            throw new RuntimeException("Cannot depart a package before its arrival.");
+        }
 
         Flight flight = flightRepository.findByFlightNumber(flightNumber);
-        if (flight == null) {
-            throw new RuntimeException("Flight not Found");
+        if(booking.getCreatedAt().isAfter(flight.getDepartureTime())){
+            throw new RuntimeException("The package is booked at " + booking.getCreatedAt() + " but you are trying to depart at " + flight.getDepartureTime());
         }
 
-        addEvent(booking,EventType.DEPART,flight.getOrigin(),flight);
+        if(flightService.checkFlight(booking.getOrigin(), booking.getDestination(),flightNumber).equals("No Flight in DB")){
+            throw new RuntimeException("The Flight do not exist in DB");
+        }else if(flightService.checkFlight(booking.getOrigin(), booking.getDestination(),flightNumber).equals("Direct flight")){
+            direct = true;
+        }else {
+            oneStop = true;
+            depart = 1;
+        }
+
+        if(direct && oneStop) {
+            possibleFlights = flightService.possibleFlights(flightRepository.findByFlightNumber(curFlight), booking.getDestination(),booking.getOrigin());
+            if (!possibleFlights.contains(flightNumber) && direct && oneStop) {
+                throw new RuntimeException("This Flight " + flightNumber + " will not go to " + booking.getDestination());
+            }
+        }
+
+        if(depart >= 0) {
+            depart--;
+            curFlight = flightNumber;
+
+            booking.setStatus(BookingStatus.DEPARTED);
+            booking.setUpdatedAt(Instant.now());
+
+            addEvent(booking, EventType.DEPART, flight.getOrigin(), flight);
+        }
     }
 
     @Transactional
     @Retryable(retryFor = { org.springframework.orm.ObjectOptimisticLockingFailureException.class }, maxAttempts = 3)
     @WithDistributedLock(key = "'booking:' + #refId")
-    public void arriveBooking(String refId,String flightNumber){
+    public void arriveBooking(String refId){
         Booking booking = bookingRepository.findByRefId(refId)
                 .orElseThrow(() -> new RuntimeException("Booking not Found"));
 
@@ -90,13 +123,19 @@ public class BookingService {
             throw new RuntimeException("Cannot arrive a cancel booking after arrival");
         }
 
-        booking.setStatus(BookingStatus.ARRIVED);
-        booking.setUpdatedAt(LocalDateTime.now());
-
-        Flight flight = flightRepository.findByFlightNumber(flightNumber);
-        if (flight == null) {
-            throw new RuntimeException("Flight not Found");
+        List<BookingEvents> be = bookingEventRepository.findByBookingIdOrderByTimeDesc(booking.getId());
+        if(be.getFirst().getLocation().equals(booking.getDestination())){
+            throw new RuntimeException("The package is already arrived at the designated destination " + booking.getDestination());
         }
+
+        if(booking.getStatus() != BookingStatus.DEPARTED){
+            throw new RuntimeException("Cannot arrive a package without it being depart");
+        }
+
+        booking.setStatus(BookingStatus.ARRIVED);
+        booking.setUpdatedAt(Instant.now());
+
+        Flight flight = flightRepository.findByFlightNumber(curFlight);
 
         addEvent(booking,EventType.ARRIVE,flight.getDestination(),flight);
     }
@@ -108,12 +147,18 @@ public class BookingService {
         Booking booking = bookingRepository.findByRefId(refId)
                 .orElseThrow(() -> new RuntimeException("Booking not Found"));
 
-        if(booking.getStatus() == BookingStatus.ARRIVED){
-            throw new RuntimeException("Cannot cancel booking after arrival");
+        List<BookingEvents> be = bookingEventRepository.findByBookingIdOrderByTimeDesc(booking.getId());
+
+        if(booking.getStatus() == BookingStatus.ARRIVED && be.getFirst().getLocation().equals(booking.getDestination())){
+            throw new RuntimeException("Cannot cancel booking after arrival at destination");
+        }
+
+        if(booking.getStatus() == BookingStatus.CANCELLED){
+            throw new RuntimeException("The booking is already can cancelled.");
         }
 
         booking.setStatus(BookingStatus.CANCELLED);
-        booking.setUpdatedAt(LocalDateTime.now());
+        booking.setUpdatedAt(Instant.now());
         addEvent(booking,EventType.CANCEL, booking.getOrigin(),null);
     }
 
@@ -150,7 +195,7 @@ public class BookingService {
                 .eventType(eventType)
                 .location(location)
                 .flight(flight)
-                .timestamp(LocalDateTime.now())
+                .timestamp(Instant.now())
                 .build();
 
         bookingEventRepository.save(bookingEvents);

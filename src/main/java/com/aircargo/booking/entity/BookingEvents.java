@@ -4,6 +4,7 @@ import com.aircargo.booking.model.EventType;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -33,6 +34,6 @@ public class BookingEvents {
     @JoinColumn(name = "flight_id")
     private Flight flight;
 
-    private LocalDateTime timestamp;
+    private Instant timestamp;
 
 }
